@@ -15,9 +15,6 @@ exports.register = async (req, res) => {
     if (!email || !password || !RIB || !CIN)
       return res.status(400).json({ error: 'Tous les champs sont requis.' });
 
-    if (!/^\d{20}$/.test(RIB))
-      return res.status(400).json({ error: 'RIB doit contenir exactement 20 chiffres.' });
-
     const emailExists = await User.findOne({ email });
     const cinExists = await User.findOne({ CIN });
 

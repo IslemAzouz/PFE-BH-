@@ -7,4 +7,4 @@ router.post('/send-approval-email', verifyToken, emailController.sendApprovalEma
 router.post('/resend-contract/:applicationId', verifyToken, emailController.resendContractEmail);
 router.put('/track-contract/:applicationId', emailController.trackContractStatus);
 
-export default router;
+module.exports = router;

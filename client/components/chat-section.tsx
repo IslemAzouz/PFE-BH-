@@ -17,12 +17,14 @@ export default function ChatSection() {
     if (!input.trim()) return
 
     const userMessage = input.trim()
+    const messageDate = new Date().toISOString()
 
     setMessages((prev) => [...prev, { sender: "user", text: userMessage }])
     setInput("")
     setLoading(true)
 
     try {
+      // Ask the Python chatbot
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask`, {
         method: "POST",
         headers: {
@@ -36,13 +38,28 @@ export default function ChatSection() {
       }
 
       const data = await res.json()
+      const botReply = data.answer
 
-      setMessages((prev) => [
-        ...prev,
-        { sender: "admin", text: data.answer },
-      ])
+      setMessages((prev) => [...prev, { sender: "admin", text: botReply }])
+
+      // Save chat to MongoDB
+      const saveRes = await fetch("http://localhost:5000/api/chat/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: userMessage,
+          answer: botReply,
+          date: messageDate,
+        }),
+      })
+
+      if (!saveRes.ok) {
+        console.error("Erreur lors de la sauvegarde du chat:", await saveRes.text())
+      }
     } catch (error) {
-      console.error("Erreur lors de l'envoi de la question :", error)
+      console.error("Erreur lors de l'envoi :", error)
       setMessages((prev) => [
         ...prev,
         { sender: "admin", text: "❌ Une erreur est survenue. Veuillez réessayer." },
@@ -64,9 +81,7 @@ export default function ChatSection() {
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex ${
-                msg.sender === "user" ? "justify-end" : "justify-start"
-              }`}
+              className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`rounded-lg px-4 py-2 text-sm max-w-[70%] ${
